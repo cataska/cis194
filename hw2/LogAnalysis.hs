@@ -42,25 +42,25 @@ insert msg@(LogMessage _ ts _) tree@(Node _ treeMsg _) =
       LogMessage Warning   treeTimeStamp _ -> buildTree treeTimeStamp ts msg tree
       LogMessage (Error _) treeTimeStamp _ -> buildTree treeTimeStamp ts msg tree
     where
-      buildTree treeTimeStamp t m tr = if treeTimeStamp > t then
+      buildTree treeTimeStamp t m tr = if t >= treeTimeStamp then
                                            Node tr m Leaf
                                        else
                                            Node Leaf m tr
 
 build :: [LogMessage] -> MessageTree
-build msgs = _build (head msgs) Leaf (tail msgs)
+build [] = Leaf
+build (m:msgs) = _build m Leaf msgs
     where
-      _build msg tree ms = if length ms == 0 then tree
-                           else
-                               _build (head ms) (insert msg tree) (tail ms)
+      _build msg tree [] = insert msg tree
+      _build msg tree (x:xs) = _build x (insert msg tree) xs
 
 inOrder :: MessageTree -> [LogMessage]
 inOrder tree = case tree of
                  Leaf -> []
-                 Node left node right -> (inOrder left) ++ node : (inOrder right)
+                 Node left node right -> (inOrder left) ++ (node : (inOrder right))
 
 whatWentWrong :: [LogMessage] -> [String]
-whatWentWrong msgs = map extractString (filter errorGreaterThan50 (inOrder (build msgs)))
+whatWentWrong msgs = map extractString $ filter errorGreaterThan50 (inOrder $ build msgs)
     where
       errorGreaterThan50 x = case x of
                                LogMessage (Error level) _ _ -> if level >= 50 then True else False
