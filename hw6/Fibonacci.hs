@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-missing-methods #-}
+
 module Fibonacci where
 
 import Data.List
@@ -48,3 +51,37 @@ startRuler n = interleaveStream (streamRepeat n) (startRuler (n+1))
 
 ruler :: Stream Integer
 ruler = startRuler 0
+
+x :: Stream Integer
+x = Cons 0 (Cons 1 (streamRepeat 0))
+
+instance Num (Stream Integer) where
+  fromInteger n = Cons n (streamRepeat 0)
+  negate (Cons x xs) = Cons (-x) (negate xs)
+  (+) (Cons x xs) (Cons y ys) = Cons (x + y) (xs + ys)
+  (*) (Cons x xs) yys@(Cons y ys) = Cons (x * y) (streamMap (*x) ys + (xs * yys))
+
+instance Fractional (Stream Integer) where
+  (/) (Cons x xs) (Cons y ys) = q where
+    q = Cons (x `div` y) (streamMap (`div` y) (xs - q*ys))
+
+fibs3 :: Stream Integer
+fibs3 = x / (1 - x - (x^2))
+
+data Matrix = Matrix Integer Integer Integer Integer deriving Show
+
+instance Num (Matrix) where
+  (*) (Matrix a11 a12
+              a21 a22)
+      (Matrix b11 b12
+              b21 b22) =
+    Matrix (a11*b11 + a12*b21) (a11*b12 + a12*b22)
+           (a21*b11 + a22*b21) (a21*b12 + a22*b22)
+
+fibM = Matrix 1 1 1 0
+
+fibs4 :: Integer -> Integer
+fibs4 0 = 0
+fibs4 1 = 1
+fibs4 n = proj (fibM^n) where
+  proj (Matrix _ x _ _) = x
