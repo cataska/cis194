@@ -45,4 +45,6 @@ interleaveStream :: Stream a -> Stream a -> Stream a
 interleaveStream (Cons x xs) ys = Cons x (interleaveStream ys xs)
 
 startRuler n = interleaveStream (streamRepeat n) (startRuler (n+1))
+
+ruler :: Stream Integer
 ruler = startRuler 0
